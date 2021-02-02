@@ -1,10 +1,8 @@
-
 #include <Wire.h>
 #include <SparkFun_APDS9960.h>
 
-// Pins
-#define APDS9960_INT    2 // Needs to be an interrupt pin
-
+// Link da Biblioteca : https://github.com/sparkfun/SparkFun_APDS-9960_Sensor_Arduino_Library/tree/V_1.4.2
+#define APDS9960_INT    2 
 // Constants
 
 // Global Variables
