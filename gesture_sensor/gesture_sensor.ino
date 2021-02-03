@@ -1,47 +1,95 @@
-/***************************************************************************
-  This is a library for the APDS9960 digital proximity, ambient light, RGB, and gesture sensor
 
-  This sketch puts the sensor in gesture mode and decodes gestures.
-  To use this, first put your hand close to the sensor to enable gesture mode.
-  Then move your hand about 6" from the sensor in the up -> down, down -> up, 
-  left -> right, or right -> left direction.
+#include <Wire.h>
+#include <SparkFun_APDS9960.h>
 
-  Designed specifically to work with the Adafruit APDS9960 breakout
-  ----> http://www.adafruit.com/products/3595
+int ledPin = 11;
+float sinVal;
+int ledVal;
 
-  These sensors use I2C to communicate. The device's I2C address is 0x39
+// Pins
+#define APDS9960_INT    2 // Needs to be an interrupt pin
 
-  Adafruit invests time and resources providing this open source code,
-  please support Adafruit andopen-source hardware by purchasing products
-  from Adafruit!
+// Constants
 
-  Written by Dean Miller for Adafruit Industries.
-  BSD license, all text above must be included in any redistribution
- ***************************************************************************/
+// Global Variables
+SparkFun_APDS9960 apds = SparkFun_APDS9960();
+int isr_flag = 0;
 
-#include "Adafruit_APDS9960.h"
-Adafruit_APDS9960 apds;
-
-// the setup function runs once when you press reset or power the board
 void setup() {
-  Serial.begin(115200);
-  
-  if(!apds.begin()){
-    Serial.println("failed to initialize device! Please check your wiring.");
-  }
-  else Serial.println("Device initialized!");
 
-  //gesture mode will be entered once proximity mode senses something close
-  apds.enableProximity(true);
-  apds.enableGesture(true);
+  
+  
+  // Set interrupt pin as input
+  pinMode(APDS9960_INT, INPUT);
+   pinMode(12, OUTPUT);
+   
+  // Initialize Serial port
+  Serial.begin(9600);
+  Serial.println();
+  Serial.println(F("--------------------------------"));
+  Serial.println(F("SparkFun APDS-9960 - GestureTest"));
+  Serial.println(F("--------------------------------"));
+  
+  // Initialize interrupt service routine
+  attachInterrupt(0, interruptRoutine, FALLING);
+
+  // Initialize APDS-9960 (configure I2C and initial values)
+  if ( apds.init() ) {
+    Serial.println(F("APDS-9960 initialization complete"));
+  } else {
+    Serial.println(F("Something went wrong during APDS-9960 init!"));
+  }
+  
+  // Start running the APDS-9960 gesture sensor engine
+  if ( apds.enableGestureSensor(true) ) {
+    Serial.println(F("Gesture sensor is now running"));
+  } else {
+    Serial.println(F("Something went wrong during gesture sensor init!"));
+  }
 }
 
-// the loop function runs over and over again forever
 void loop() {
-  //read a gesture from the device
-    uint8_t gesture = apds.readGesture();
-    if(gesture == APDS9960_DOWN) Serial.println("v");
-    if(gesture == APDS9960_UP) Serial.println("^");
-    if(gesture == APDS9960_LEFT) Serial.println("<");
-    if(gesture == APDS9960_RIGHT) Serial.println(">");
+  if( isr_flag == 1 ) {
+    detachInterrupt(0);
+    handleGesture();
+    isr_flag = 0;
+    attachInterrupt(0, interruptRoutine, FALLING);
+  }
+}
+
+void interruptRoutine() {
+  isr_flag = 1;
+}
+
+void handleGesture() {
+    if ( apds.isGestureAvailable() ) {
+    switch ( apds.readGesture() ) {
+      case DIR_UP:
+        Serial.println("CIMA ↑");
+        digitalWrite(12, HIGH);
+        break;
+        
+      case DIR_DOWN:
+        Serial.println("BAIXO ↓");
+        digitalWrite(12, LOW);
+        break;
+        
+      case DIR_LEFT:
+        Serial.println("ESQUERDA ←");
+        break;
+        
+      case DIR_RIGHT:
+        Serial.println("DIREITA →");
+        break;
+        
+      case DIR_NEAR:
+        Serial.println("PROXIMO");
+        break;
+      case DIR_FAR:
+        Serial.println("DISTANTE");
+        break;
+      default:
+        Serial.println("NONE");
+    }
+  }
 }
