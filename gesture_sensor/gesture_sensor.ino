@@ -2,7 +2,6 @@
 #include <Wire.h>
 #include <SparkFun_APDS9960.h>
 
-int ledPin = 11;
 float sinVal;
 int ledVal;
 
@@ -14,14 +13,12 @@ int ledVal;
 // Global Variables
 SparkFun_APDS9960 apds = SparkFun_APDS9960();
 int isr_flag = 0;
+static int cont = 0;
 
 void setup() {
-
-  
-  
   // Set interrupt pin as input
   pinMode(APDS9960_INT, INPUT);
-   pinMode(12, OUTPUT);
+  pinMode(11, OUTPUT);
    
   // Initialize Serial port
   Serial.begin(9600);
@@ -48,6 +45,89 @@ void setup() {
   }
 }
 
+// Chegar gestos 
+void handleGesture() {
+  static int cont = 0;
+    if ( apds.isGestureAvailable() ) {
+    switch ( apds.readGesture() ) {      
+      case DIR_UP:
+        cont = 4;
+        Serial.println("CIMA ↑");
+        break;
+        
+      case DIR_DOWN:
+        cont = 0;
+        Serial.println("BAIXO ↓");
+        break;
+        
+      case DIR_LEFT:
+        cont --;
+        Serial.println("ESQUERDA ←");
+        break;
+        
+      case DIR_RIGHT:
+        cont ++;
+        Serial.println("DIREITA →");
+        break;
+        
+      case DIR_NEAR:
+        Serial.println("PROXIMO");
+        break;
+        
+      case DIR_FAR:
+        Serial.println("DISTANTE");
+        for (int x=0; x<180; x++) 
+//        {
+//          sinVal = (sin(x*(3.1412/180)));
+//          ledVal = int(sinVal*255);
+//          analogWrite(11, ledVal);
+//          delay(25);
+//        }
+        break; 
+        
+      default:
+        Serial.println("NULL");
+    }
+    
+//conferir se o valor excede    
+    if (cont >=4)
+      cont= 4;
+    if(cont <= 0)
+        cont=0;
+
+//Adaptar a luz ao nivel desejado 
+    switch (cont){
+      case 0:
+        Serial.println(cont);
+        analogWrite(11, 0);
+      break;
+
+      case 1:
+        Serial.println(cont);
+        analogWrite(11, 64);
+      break;
+
+      case 2:
+        Serial.println(cont);
+        analogWrite(11, 128);
+      break;
+
+      case 3:
+        Serial.println(cont);
+        analogWrite(11, 192);
+      break;
+
+      case 4:
+        Serial.println(cont);
+        analogWrite(11, 255);
+      break;
+      
+      default:
+        Serial.println("NULL");
+    }
+  }
+}
+
 void loop() {
   if( isr_flag == 1 ) {
     detachInterrupt(0);
@@ -59,37 +139,4 @@ void loop() {
 
 void interruptRoutine() {
   isr_flag = 1;
-}
-
-void handleGesture() {
-    if ( apds.isGestureAvailable() ) {
-    switch ( apds.readGesture() ) {
-      case DIR_UP:
-        Serial.println("CIMA ↑");
-        digitalWrite(12, HIGH);
-        break;
-        
-      case DIR_DOWN:
-        Serial.println("BAIXO ↓");
-        digitalWrite(12, LOW);
-        break;
-        
-      case DIR_LEFT:
-        Serial.println("ESQUERDA ←");
-        break;
-        
-      case DIR_RIGHT:
-        Serial.println("DIREITA →");
-        break;
-        
-      case DIR_NEAR:
-        Serial.println("PROXIMO");
-        break;
-      case DIR_FAR:
-        Serial.println("DISTANTE");
-        break;
-      default:
-        Serial.println("NONE");
-    }
-  }
 }
